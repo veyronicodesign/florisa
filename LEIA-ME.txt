@@ -1,10 +1,17 @@
-Florisa: site (v5)
+Florisa: site + loja (v8)
 
-Como publicar na Vercel:
-1. Entre em vercel.com > Add New > Project.
-2. Arraste esta pasta inteira (ou suba para um repositório no GitHub e importe).
-3. Framework Preset: Other. Não precisa de build. Clique em Deploy.
+O que tem nesta pasta:
+- index.html ........ o site inteiro (página, loja, carrinho, checkout e acompanhamento)
+- image-slot.js ..... componente que mostra as fotos (obrigatório, fica ao lado do index.html)
+- stock/ ............ fotos provisórias do Unsplash (com marca d'água "[trocar por foto real]")
+- fotos/ ............ fotos reais já colocadas no site
+- vercel.json ....... configuração da Vercel
+- INTEGRACAO.md ..... como ligar a loja ao sistema de pedidos e pagamento
 
-O site é um único index.html, com fotos e fontes já embutidas.
+Como publicar:
+1. No repositório do GitHub, apague os arquivos antigos e suba TODO o conteúdo desta pasta,
+   mantendo as pastas stock/ e fotos/.
+2. A Vercel publica sozinha a cada commit (Framework Preset: Other, sem build).
 
-Link para a loja: https://florisa-loja.vercel.app/: troque o endereço provisório dentro do index.html depois que souber o domínio real (busque por "vercel.app").
+A loja está em MODO DEMONSTRAÇÃO: nada é cobrado e os pedidos ficam só no navegador de quem comprou.
+Para vender de verdade, siga o INTEGRACAO.md.
