@@ -1,0 +1,10 @@
+Florisa: site (v5)
+
+Como publicar na Vercel:
+1. Entre em vercel.com > Add New > Project.
+2. Arraste esta pasta inteira (ou suba para um repositório no GitHub e importe).
+3. Framework Preset: Other. Não precisa de build. Clique em Deploy.
+
+O site é um único index.html, com fotos e fontes já embutidas.
+
+Link para a loja: https://florisa-loja.vercel.app/: troque o endereço provisório dentro do index.html depois que souber o domínio real (busque por "vercel.app").
