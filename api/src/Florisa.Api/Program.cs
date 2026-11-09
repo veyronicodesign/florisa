@@ -102,7 +102,11 @@ app.UseExceptionHandler(e => e.Run(async ctx =>
 app.UseCors();
 
 // ---------- Painel da equipe: páginas em wwwroot/painel, abertas em /painel ----------
-app.MapGet("/painel", () => Results.Redirect("/painel/"));
+app.Use(async (ctx, next) =>
+{
+    if (ctx.Request.Path.Value == "/painel") { ctx.Response.Redirect("/painel/"); return; }
+    await next();
+});
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
