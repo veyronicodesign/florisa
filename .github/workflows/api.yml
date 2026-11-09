@@ -1,0 +1,41 @@
+name: API (.NET)
+
+on:
+  push:
+    paths:
+      - "api/**"
+      - ".github/workflows/api.yml"
+  pull_request:
+    paths:
+      - "api/**"
+      - ".github/workflows/api.yml"
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - name: Restaurar
+        run: dotnet restore Florisa.slnx
+      - name: Compilar
+        run: dotnet build Florisa.slnx --no-restore -c Release
+      - name: Testar
+        run: dotnet test Florisa.slnx --no-build -c Release --logger "console;verbosity=normal" --logger GitHubActions --logger "trx;LogFileName=resultado.trx" --results-directory resultados
+      - name: Montar imagem Docker
+        run: docker build -t florisa-api .
+      - name: Resumo dos testes
+        if: always()
+        run: |
+          f=$(find resultados -name '*.trx' | head -1)
+          if [ -z "$f" ]; then echo "::error::Nenhum resultado de teste encontrado"; exit 1; fi
+          linha=$(grep -o '<Counters [^>]*>' "$f")
+          total=$(echo "$linha" | grep -o 'total="[0-9]*"' | grep -o '[0-9]*')
+          passou=$(echo "$linha" | grep -o 'passed="[0-9]*"' | grep -o '[0-9]*')
+          falhou=$(echo "$linha" | grep -o 'failed="[0-9]*"' | grep -o '[0-9]*')
+          echo "::notice title=Testes::$passou de $total passaram, $falhou falharam"

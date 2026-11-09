@@ -1,0 +1,98 @@
+### Testes manuais da API da Florisa
+### Abra no Visual Studio ou no VS Code (extensão "REST Client") e clique em "Send Request" acima de cada chamada.
+### Antes: rode a API (dotnet run) e confira a porta que aparece no terminal.
+
+@api = http://localhost:5000
+@tel = 47999999999
+# Data de entrega: precisa ser de hoje em diante e não pode ser domingo.
+@data = 2026-11-12
+
+### 1. Catálogo (produtos, extras e taxas)
+GET {{api}}/api/catalogo
+
+### 2. Frete de um bairro
+POST {{api}}/api/frete
+Content-Type: application/json
+
+{ "bairro": "Centro", "cep": "89250000", "subtotal": 190 }
+
+### 3. Criar pedido com Pix (fica "aguardando pagamento")
+# 190 (rosas) + 35 (bombom) + 12 (frete Centro) = 237
+# @name pedido
+POST {{api}}/api/pedidos
+Content-Type: application/json
+
+{
+  "origem": "site",
+  "cliente": { "nome": "Ana", "tel": "{{tel}}", "email": "ana@email.com" },
+  "destinatario": { "nome": "Maria", "tel": "47988887777" },
+  "entrega": {
+    "modo": "entrega", "data": "{{data}}", "taxa": 12,
+    "endereco": { "cep": "89250000", "rua": "Rua A", "numero": "10", "complemento": "", "bairro": "Centro" }
+  },
+  "itens": [ { "id": "rn21", "nome": "Bouquet com 12 rosas", "quantidade": 1, "precoUnitario": 190, "extras": ["bombom"], "total": 225 } ],
+  "subtotal": 225, "frete": 12, "total": 237,
+  "pagamento": { "metodo": "pix", "parcelas": 1, "cartaoToken": null, "cartaoFinal": null },
+  "mensagemCartao": "Feliz aniversário!"
+}
+
+### 4. Consultar o pedido (como a tela "Meus pedidos" do site)
+GET {{api}}/api/pedidos/{{pedido.response.body.$.numero}}?tel={{tel}}
+
+### 5. Teste de segurança: total errado (o servidor recusa com 409)
+POST {{api}}/api/pedidos
+Content-Type: application/json
+
+{
+  "cliente": { "nome": "Ana", "tel": "{{tel}}" },
+  "destinatario": null,
+  "entrega": { "modo": "retirada", "data": null, "taxa": 0, "endereco": null },
+  "itens": [ { "id": "rn21", "quantidade": 1, "extras": [] } ],
+  "total": 10,
+  "pagamento": { "metodo": "loja" }
+}
+
+### 6. Login por código: pede o código (aparece no terminal da API, no lugar do WhatsApp)
+POST {{api}}/api/auth/codigo
+Content-Type: application/json
+
+{ "tel": "{{tel}}" }
+
+### 7. Confere o código (troque 1234 pelo que apareceu no terminal)
+# @name cliente
+POST {{api}}/api/auth/verificar
+Content-Type: application/json
+
+{ "tel": "{{tel}}", "codigo": "1234" }
+
+### 8. Meus pedidos (com o token do passo 7)
+GET {{api}}/api/pedidos?meus=1
+Authorization: Bearer {{cliente.response.body.$.token}}
+
+### ---------------- Painel da equipe ----------------
+
+### 9. Login da equipe (senha de desenvolvimento)
+# @name equipe
+POST {{api}}/api/painel/login
+Content-Type: application/json
+
+{ "usuario": "admin", "senha": "florisa-dev-123" }
+
+### 10. Fila de pedidos em aberto
+GET {{api}}/api/painel/pedidos?dia=abertos
+Authorization: Bearer {{equipe.response.body.$.token}}
+
+### 11. Confirmar o Pix na mão (no modo simulado ninguém paga de verdade)
+POST {{api}}/api/painel/pedidos/{{pedido.response.body.$.numero}}/confirmar-pagamento
+Authorization: Bearer {{equipe.response.body.$.token}}
+
+### 12. Avançar etapa (repita: em preparo → saiu para entrega → entregue)
+POST {{api}}/api/painel/pedidos/{{pedido.response.body.$.numero}}/avancar
+Authorization: Bearer {{equipe.response.body.$.token}}
+
+### 13. Marcar um produto como esgotado
+PUT {{api}}/api/painel/produtos/fm03
+Authorization: Bearer {{equipe.response.body.$.token}}
+Content-Type: application/json
+
+{ "disponivel": false }

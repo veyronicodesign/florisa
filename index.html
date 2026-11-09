@@ -1670,7 +1670,7 @@ var API = {
      Recebe { numero, nome, validade, cvv, parcelas }. Devolve { token, bandeira, final }. */
   tokenizarCartao: function (c) {
     var fim = String(c.numero).replace(/\D/g, "").slice(-4);
-    if (this.real()) return Promise.reject(new Error("Conecte o SDK do gateway em API.tokenizarCartao"));
+    if (this.real() && !this.cartaoSimulado) return Promise.reject(new Error("Conecte o SDK do gateway em API.tokenizarCartao"));
     return this.espera({ token: "tok_sim_" + Date.now(), bandeira: "simulado", final: fim }, 300);
   },
   /* Cria o pedido e a cobrança. Recebe o pedido (formato em INTEGRACAO.md).
@@ -1703,6 +1703,12 @@ var API = {
     return Promise.resolve(null);
   }
 };
+/* Desenvolvimento: aberto pelo servidor da Florisa no computador (http://localhost:5000), a loja usa o servidor de verdade.
+   O pagamento continua simulado lá (cartão de teste), até ligarmos o provedor. Para forçar: ?api=real ou ?api=simulado. */
+(function () {
+  var q = /[?&]api=(real|simulado)/.exec(location.search), local = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+  if ((q && q[1] === "real") || (!q && local)) { API.modo = "real"; API.base = "/api"; API.cartaoSimulado = true; }
+})();
 var PAGAMENTO = API; // compatibilidade com versões anteriores
 /* ===================================================================== */
 
@@ -2122,7 +2128,8 @@ var ETAPAS_R = [ ["Pedido recebido","Recebemos o seu pedido."], ["Em preparo","S
       (usuario ? '<div class="logado">' + ic("i-user") + '<span>Comprando como <b>' + esc(u.nome || u.tel) + '</b></span></div>' : "") +
       '<div class="campos">' + campo("nome", "Nome completo", "c3", '<input id="nome" autocomplete="name" value="' + esc(u.nome || "") + '" required>') + campo("tel", "WhatsApp", "c3", '<input id="tel" type="tel" inputmode="tel" autocomplete="tel" placeholder="(47) 9 0000-0000" value="' + esc(u.tel || "") + '" required>') + campo("email", "E-mail (para o comprovante)", "", '<input id="email" type="email" autocomplete="email" value="' + esc(u.email || "") + '">') + '</div></section>' +
       '<section class="passo"><h2><span class="num">2</span>Para quem é</h2><label class="toggle"><input type="checkbox" id="presente">É para presente</label>' +
-      '<div class="abre" id="abrePres"><div><div class="campos">' + campo("dNome", "Nome de quem recebe", "c3", '<input id="dNome">') + campo("dTel", "Telefone de quem recebe", "c3", '<input id="dTel" type="tel" inputmode="tel">') + '</div></div></div></section>' +
+      '<div class="abre" id="abrePres"><div><div class="campos">' + campo("dNome", "Nome de quem recebe", "c3", '<input id="dNome">') + campo("dTel", "Telefone de quem recebe", "c3", '<input id="dTel" type="tel" inputmode="tel">') + '</div></div></div>' +
+      '<div class="campos" style="margin-top:1rem">' + campo("msgCartao", "Mensagem do cartão (opcional)", "", '<textarea id="msgCartao" rows="3" maxlength="400" placeholder="A gente escreve à mão no cartão que vai com as flores."></textarea>') + '</div></section>' +
       '<section class="passo"><h2><span class="num">3</span>Entrega ou retirada</h2><div class="alterna">' +
       '<label class="opcao"><input type="radio" name="modo" value="entrega" checked><b>' + ic("i-entrega") + 'Receber no endereço</b><small>Jaraguá do Sul · taxa por bairro</small></label>' +
       '<label class="opcao"><input type="radio" name="modo" value="retirada"><b>' + ic("i-pin") + 'Retirar na loja</b><small>Grátis · Vila Lalau</small></label></div>' +
@@ -2195,6 +2202,7 @@ var ETAPAS_R = [ ["Pedido recebido","Recebemos o seu pedido."], ["Em preparo","S
           endereco: entrega ? { cep: $("#cep").value.replace(/\D/g, ""), rua: $("#rua").value.trim(), numero: $("#numero").value.trim(), complemento: $("#compl").value.trim(), bairro: $("#bairro").value } : null },
         itens: carrinho.map(function (i) { var p = prod(i.id); return { id: i.id, nome: p.nome, quantidade: i.q, precoUnitario: p.preco, extras: i.extras.slice(), total: itemTotal(i) }; }),
         subtotal: subtotal(), frete: fr, total: subtotal() + fr,
+        mensagemCartao: ($("#msgCartao").value || "").trim() || null,
         pagamento: { metodo: pag(), parcelas: pag() === "cartao" ? +$("#parc").value : 1, cartaoToken: null }
       };
       var tok = pag() === "cartao" ? API.tokenizarCartao({ numero: $("#cNum").value, nome: $("#cNome").value, validade: $("#cVal").value, cvv: $("#cCvv").value, parcelas: req.pagamento.parcelas }) : Promise.resolve(null);
@@ -2214,7 +2222,7 @@ var ETAPAS_R = [ ["Pedido recebido","Recebemos o seu pedido."], ["Em preparo","S
         if (usuario) { usuario.nome = usuario.nome || ped.nome; LS.set("usuario", usuario); }
         carrinho = []; salvaC();
         location.hash = "#/pedido/" + n;
-      }).catch(function (err) { btn.disabled = false; btn.textContent = "Tentar de novo"; toast("<span>" + esc(err && err.message === "Pagamento recusado" ? "O pagamento foi recusado. Confira os dados ou use outra forma de pagamento." : "Não conseguimos confirmar o pedido. Confira os dados e tente de novo.") + "</span>"); });
+      }).catch(function (err) { btn.disabled = false; btn.textContent = "Tentar de novo"; toast("<span>" + esc(err && err.message === "Pagamento recusado" ? "O pagamento foi recusado. Confira os dados ou use outra forma de pagamento." : (err && err.status && err.message) ? err.message : "Não conseguimos confirmar o pedido. Confira os dados e tente de novo.") + "</span>"); });
     };
   }
 

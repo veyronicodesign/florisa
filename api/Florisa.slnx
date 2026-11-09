@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Florisa.Api/Florisa.Api.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Florisa.Api.Tests/Florisa.Api.Tests.csproj" />
+  </Folder>
+</Solution>
