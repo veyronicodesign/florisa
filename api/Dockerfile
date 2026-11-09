@@ -4,7 +4,7 @@ COPY Directory.Build.props ./
 COPY src/Florisa.Api/Florisa.Api.csproj src/Florisa.Api/
 RUN dotnet restore src/Florisa.Api/Florisa.Api.csproj
 COPY src/ src/
-RUN dotnet publish src/Florisa.Api/Florisa.Api.csproj -c Release -o /app --no-restore
+RUN dotnet publish src/Florisa.Api/Florisa.Api.csproj -c Release -o /app
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
