@@ -75,6 +75,9 @@ builder.Services.AddRateLimiter(o =>
     o.AddPolicy("codigos", http => RateLimitPartition.GetFixedWindowLimiter(
         http.Connection.RemoteIpAddress?.ToString() ?? "?",
         _ => new FixedWindowRateLimiterOptions { PermitLimit = config.GetValue("Limites:CodigosPorMinuto", 10), Window = TimeSpan.FromMinutes(1) }));
+    o.AddPolicy("consultas", http => RateLimitPartition.GetFixedWindowLimiter(
+        http.Connection.RemoteIpAddress?.ToString() ?? "?",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = config.GetValue("Limites:ConsultasPorMinuto", 60), Window = TimeSpan.FromMinutes(1) }));
     o.AddPolicy("pedidos", http => RateLimitPartition.GetFixedWindowLimiter(
         http.Connection.RemoteIpAddress?.ToString() ?? "?",
         _ => new FixedWindowRateLimiterOptions { PermitLimit = config.GetValue("Limites:PedidosPorMinuto", 20), Window = TimeSpan.FromMinutes(1) }));
@@ -82,7 +85,25 @@ builder.Services.AddRateLimiter(o =>
 
 builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase);
 
+// Atrás de um proxy (Railway, Fly.io, Azure...), o IP real do cliente vem no cabeçalho X-Forwarded-For.
+// Sem isso, o limite de tentativas trataria todos os clientes como um só.
+builder.Services.Configure<Microsoft.AspNetCore.Builder.ForwardedHeadersOptions>(o =>
+{
+    o.ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto;
+    o.KnownNetworks.Clear();
+    o.KnownProxies.Clear();
+});
+
 var app = builder.Build();
+
+if (config.GetValue("Hospedagem:AtrasDeProxy", false)) app.UseForwardedHeaders();
+
+// Avisos para não ir ao ar com peças de teste.
+if (!app.Environment.IsDevelopment() && !app.Environment.IsEnvironment("Testing"))
+{
+    if (provedor == "simulado") app.Logger.LogWarning("ATENÇÃO: pagamento SIMULADO. Nenhum Pix ou cartão é cobrado de verdade.");
+    if (config["Equipe:AdminSenha"] is "florisa-dev-123") app.Logger.LogWarning("ATENÇÃO: senha de desenvolvimento do admin em uso. Troque Equipe:AdminSenha.");
+}
 
 // ---------- Erros sempre no formato { "mensagem": "..." } ----------
 app.UseExceptionHandler(e => e.Run(async ctx =>

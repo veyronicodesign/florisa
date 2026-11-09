@@ -51,7 +51,7 @@ public static class LojaEndpoints
             var logado = await TelefoneLogadoAsync(http);
             var podeVer = (telInformado is not null && telInformado == p.ClienteTelefone) || (logado is not null && logado == p.ClienteTelefone);
             return podeVer ? Results.Ok(Mapeamento.Completo(p)) : Results.NotFound(new ErroResp("Pedido não encontrado."));
-        });
+        }).RequireRateLimiting("consultas");
 
         api.MapGet("/pedidos", async (int? meus, ClaimsPrincipal user, FlorisaDb db, CancellationToken ct) =>
         {

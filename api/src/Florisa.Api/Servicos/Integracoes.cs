@@ -79,14 +79,27 @@ public interface IEnvioMensagens
     Task EnviarAsync(string telefone, string texto, CancellationToken ct);
 }
 
+/// <summary>
+/// Só escreve no registro do servidor. Em desenvolvimento mostra a mensagem inteira (inclusive o código de login,
+/// para dar para testar). Fora do desenvolvimento esconde os números, para o código de login nunca ficar gravado em log.
+/// </summary>
 public class EnvioMensagensLog : IEnvioMensagens
 {
     readonly ILogger<EnvioMensagensLog> _log;
-    public EnvioMensagensLog(ILogger<EnvioMensagensLog> log) => _log = log;
+    readonly bool _mostrarTudo;
+
+    public EnvioMensagensLog(ILogger<EnvioMensagensLog> log, IHostEnvironment ambiente)
+    {
+        _log = log;
+        _mostrarTudo = ambiente.IsDevelopment();
+    }
 
     public Task EnviarAsync(string telefone, string texto, CancellationToken ct)
     {
-        _log.LogInformation("WhatsApp para {Telefone}: {Texto}", telefone, texto);
+        if (_mostrarTudo)
+            _log.LogInformation("WhatsApp para {Telefone}: {Texto}", telefone, texto);
+        else
+            _log.LogInformation("WhatsApp para ***{Final}: {Texto}", telefone.Length > 4 ? telefone[^4..] : "", System.Text.RegularExpressions.Regex.Replace(texto, @"\b\d{4}\b", "****"));
         return Task.CompletedTask;
     }
 }

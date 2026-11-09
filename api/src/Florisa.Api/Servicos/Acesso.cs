@@ -100,6 +100,12 @@ public class ServicoCodigos
         if (ultimo is not null && ultimo.CriadoEm > agora.AddSeconds(-60))
             throw new RegraException("Já enviamos um código agora há pouco. Espere um minuto para pedir outro.", StatusCodes.Status429TooManyRequests);
 
+        // Limite por telefone em 24 horas: impede ficar pedindo código novo para tentar adivinhar.
+        var desde = agora.AddHours(-24);
+        var enviadosHoje = await _db.CodigosAcesso.CountAsync(c => c.Telefone == tel && c.CriadoEm > desde, ct);
+        if (enviadosHoje >= _config.GetValue("Limites:CodigosPorTelefoneDia", 5))
+            throw new RegraException("Você já pediu muitos códigos hoje. Tente de novo amanhã ou compre sem entrar na conta.", StatusCodes.Status429TooManyRequests);
+
         var codigo = RandomNumberGenerator.GetInt32(0, 10000).ToString("D4");
         _db.CodigosAcesso.Add(new CodigoAcesso
         {
@@ -117,6 +123,13 @@ public class ServicoCodigos
         var tel = Telefones.Obrigatorio(telBruto);
         var agora = _horario.AgoraUtc;
         var errado = new RegraException("Código incorreto ou vencido. Peça um novo.", StatusCodes.Status401Unauthorized);
+
+        // Erros somados de todos os códigos do telefone em 24 horas. Passou do limite, bloqueia até o dia seguinte,
+        // mesmo com o código certo: assim ninguém adivinha um código de 4 dígitos na insistência.
+        var desde = agora.AddHours(-24);
+        var errosHoje = await _db.CodigosAcesso.Where(c => c.Telefone == tel && c.CriadoEm > desde && !c.Usado).SumAsync(c => c.Tentativas, ct);
+        if (errosHoje >= _config.GetValue("Limites:ErrosDeCodigoPorTelefoneDia", 10))
+            throw new RegraException("Muitas tentativas erradas. Por segurança, o login por este número fica bloqueado até amanhã.", StatusCodes.Status429TooManyRequests);
 
         var registro = await _db.CodigosAcesso
             .Where(c => c.Telefone == tel && !c.Usado && c.ExpiraEm > agora)
