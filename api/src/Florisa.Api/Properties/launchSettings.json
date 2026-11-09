@@ -4,7 +4,7 @@
     "Florisa.Api": {
       "commandName": "Project",
       "launchBrowser": true,
-      "launchUrl": "api/catalogo",
+      "launchUrl": "",
       "applicationUrl": "http://localhost:5000",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"

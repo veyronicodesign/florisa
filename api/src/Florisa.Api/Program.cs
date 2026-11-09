@@ -112,7 +112,27 @@ using (var scope = app.Services.CreateScope())
     await Semente.AplicarAsync(db, config, scope.ServiceProvider.GetRequiredService<TimeProvider>());
 }
 
-app.MapGet("/", () => Results.Ok(new { servico = "Florisa API", pagamento = provedor }));
+// ---------- Site junto (só para testar no computador) ----------
+// Com "Site:Pasta" configurado (appsettings.Development.json aponta para a raiz do repositório),
+// http://localhost:5000 abre a loja já ligada a este servidor.
+var pastaSite = config["Site:Pasta"];
+var raizSite = string.IsNullOrWhiteSpace(pastaSite) ? null : Path.GetFullPath(Path.Combine(app.Environment.ContentRootPath, pastaSite));
+if (raizSite is not null && File.Exists(Path.Combine(raizSite, "index.html")))
+{
+    foreach (var pasta in new[] { "fotos", "stock" })
+        if (Directory.Exists(Path.Combine(raizSite, pasta)))
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(Path.Combine(raizSite, pasta)),
+                RequestPath = "/" + pasta
+            });
+    app.MapGet("/", () => Results.Text(File.ReadAllText(Path.Combine(raizSite, "index.html")), "text/html; charset=utf-8"));
+    app.MapGet("/image-slot.js", () => Results.Text(File.ReadAllText(Path.Combine(raizSite, "image-slot.js")), "text/javascript; charset=utf-8"));
+}
+else
+{
+    app.MapGet("/", () => Results.Ok(new { servico = "Florisa API", pagamento = provedor }));
+}
 app.MapGet("/saude", () => Results.Ok(new { ok = true }));
 app.MapLoja();
 app.MapPainel();
