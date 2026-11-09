@@ -51,8 +51,13 @@ public static class PainelEndpoints
                 q = q.Where(p => p.Numero == b || p.ClienteNome.Contains(b) || (tel != null && p.ClienteTelefone == tel));
             }
             var lista = await q.OrderBy(p => p.Etapa).ThenBy(p => p.Id).Take(300).ToListAsync(ct);
-            return lista.Select(Mapeamento.Resumo);
+            var fotos = await db.Produtos.Where(x => x.Imagem != null).ToDictionaryAsync(x => x.Id, x => x.Imagem, ct);
+            return lista.Select(p => Mapeamento.Resumo(p,
+                p.Itens.OrderBy(i => i.Id).Select(i => fotos.GetValueOrDefault(i.ProdutoId)).FirstOrDefault(f => f != null)));
         });
+
+        equipe.MapGet("/entregadores", async (FlorisaDb db, CancellationToken ct) =>
+            await db.Equipe.Where(m => m.Ativo && m.Papel == Papeis.Entregador).OrderBy(m => m.Nome).Select(m => m.Nome).ToListAsync(ct));
 
         equipe.MapGet("/pedidos/{numero}", async (string numero, ServicoPedidos pedidos, CancellationToken ct) =>
         {

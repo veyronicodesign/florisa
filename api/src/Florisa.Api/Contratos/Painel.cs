@@ -20,7 +20,9 @@ public record PedidoResumoDto(
     string PagamentoMetodo,
     string PagamentoStatus,
     decimal Total,
-    string? Entregador);
+    string? Entregador,
+    string? MensagemCartao = null,
+    string? Foto = null);
 
 public record EventoDto(DateTime Quando, string Descricao, string Autor);
 

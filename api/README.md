@@ -17,6 +17,11 @@ dotnet run
 Em desenvolvimento ele cria o arquivo `florisa.db` com os produtos, extras e taxas da v8 e um usuário do painel:
 `admin` / `florisa-dev-123` (definido em `appsettings.Development.json`).
 
+Com o servidor ligado:
+
+- **Loja:** http://localhost:5000 (o site da v8, já ligado a este servidor)
+- **Painel da equipe:** http://localhost:5000/painel
+
 Testes:
 
 ```bash
@@ -43,11 +48,14 @@ A cada envio para o GitHub, o workflow `.github/workflows/api.yml` compila e rod
 
 ### Painel (equipe, com login)
 
+As telas do painel ficam em `src/Florisa.Api/wwwroot/painel` (HTML, CSS e JS, sem build) e abrem em `/painel`.
+
 | Método | Caminho | Quem pode |
 |---|---|---|
 | POST | `/api/painel/login` | todos |
 | GET | `/api/painel/pedidos?dia=hoje\|amanha\|abertos\|todos&modo=&busca=` | equipe |
 | GET | `/api/painel/pedidos/{numero}` | equipe |
+| GET | `/api/painel/entregadores` | equipe |
 | POST | `/api/painel/pedidos/{numero}/avancar` | equipe (entregador só saída e entrega) |
 | POST | `/api/painel/pedidos/{numero}/confirmar-pagamento` | admin, atendente |
 | PATCH | `/api/painel/pedidos/{numero}` (entregador, nota interna) | admin, atendente |

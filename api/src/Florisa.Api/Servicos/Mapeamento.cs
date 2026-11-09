@@ -37,7 +37,9 @@ public static class Mapeamento
         p.MensagemCartao,
         p.Observacoes);
 
-    public static PedidoResumoDto Resumo(Pedido p) => new(
+    public static PedidoResumoDto Resumo(Pedido p) => Resumo(p, null);
+
+    public static PedidoResumoDto Resumo(Pedido p, string? foto) => new(
         p.Numero,
         p.Etapa,
         Etapas.Nome(p.Etapa, p.Modo),
@@ -54,7 +56,9 @@ public static class Mapeamento
         p.PagamentoMetodo,
         p.PagamentoStatus,
         p.Total,
-        p.Entregador);
+        p.Entregador,
+        p.MensagemCartao,
+        foto);
 
     public static PedidoPainelResp Painel(Pedido p) => new(
         Completo(p),

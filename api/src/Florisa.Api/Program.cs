@@ -100,6 +100,12 @@ app.UseExceptionHandler(e => e.Run(async ctx =>
 }));
 
 app.UseCors();
+
+// ---------- Painel da equipe: páginas em wwwroot/painel, abertas em /painel ----------
+app.MapGet("/painel", () => Results.Redirect("/painel/"));
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();

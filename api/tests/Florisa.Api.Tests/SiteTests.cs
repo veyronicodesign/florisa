@@ -41,3 +41,26 @@ public class SiteTests : IClassFixture<FabricaComSite>
         Assert.NotEqual(HttpStatusCode.OK, r.StatusCode);
     }
 }
+
+public class PainelPaginaTests : IClassFixture<FabricaApi>
+{
+    readonly HttpClient _c;
+    public PainelPaginaTests(FabricaApi f) => _c = f.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+
+    [Fact]
+    public async Task Painel_abre_em_barra_painel()
+    {
+        var redireciona = await _c.GetAsync("/painel");
+        Assert.Equal(HttpStatusCode.Redirect, redireciona.StatusCode);
+        var html = await _c.GetStringAsync("/painel/");
+        Assert.Contains("Painel Florisa", html);
+        Assert.Equal(HttpStatusCode.OK, (await _c.GetAsync("/painel/painel.js")).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await _c.GetAsync("/painel/fotos/f-rn17.webp")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Entregadores_exige_login()
+    {
+        Assert.Equal(HttpStatusCode.Unauthorized, (await _c.GetAsync("/api/painel/entregadores")).StatusCode);
+    }
+}
