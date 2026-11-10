@@ -4,7 +4,7 @@ O que tem nesta pasta:
 - index.html ........ o site inteiro (página, loja, carrinho, checkout e acompanhamento)
 - image-slot.js ..... componente que mostra as fotos (obrigatório, fica ao lado do index.html)
 - stock/ ............ fotos provisórias do Unsplash (com marca d'água "[trocar por foto real]")
-- fotos/ ............ fotos reais já colocadas no site
+- fotos/ ............ fotos reais da Florisa (Agora Menu, perfil do Google e da loja)
 - vercel.json ....... configuração da Vercel
 - INTEGRACAO.md ..... como ligar a loja ao sistema de pedidos e pagamento
 
